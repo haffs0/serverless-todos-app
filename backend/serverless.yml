@@ -7,8 +7,6 @@ plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
   - serverless-plugin-tracing
-  - serverless-reqvalidator-plugin
-  - serverless-aws-documentation
 
 provider:
   name: aws
@@ -44,40 +42,6 @@ provider:
             - xray:PutTraceSegments
           Resource: "*"
 
-custom:
-  documentation:
-    api:
-      info:
-        version: '1.0.0'
-        title: Udacity Serverless Project API
-        description: Udacity Serverless Project API
-    models:
-      - name: CreateTodoRequest
-        contentType: "application/json"
-        schema:
-          required:
-            - name
-            - dueDate
-          properties:
-            name:
-              type: string
-            dueDate:
-              type: string
-      - name: UpdateTodoRequest
-        contentType: "application/json"
-        schema:
-          required:
-            - name
-            - dueDate
-            - done
-          properties:
-            name:
-              type: string
-            dueDate:
-              type: string
-            done:
-              type: boolean
-  
   
 functions:
 
@@ -112,12 +76,9 @@ functions:
           path: todos
           cors: true
           authorizer: Auth
-          reqValidatorName: RequestBodyValidator
-          documentation:
-            summary: Create a new todo
-            description: Create a new todo
-            requestModels:
-              'application/json': CreateTodoRequest
+          request:
+            schemas:
+              application/json: ${file(models/create-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -133,12 +94,9 @@ functions:
           method: patch
           path: todos/{todoId}
           cors: true
-          reqValidatorName: RequestBodyValidator
-          documentation:
-            summary: Update a todo item
-            description: Update a todo item
-            requestModels:
-              'application/json': UpdateTodoRequest
+          request:
+            schemas:
+              application/json: ${file(models/update-todo-model.json)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -215,22 +173,6 @@ resources:
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.TODOS_TABLE}
-    onlyBody:
-      Type: "AWS::ApiGateway::RequestValidator"
-      Properties:
-        Name: 'only-body'
-        RestApiId:
-          Ref: ApiGatewayRestApi
-        ValidateRequestBody: true
-        ValidateRequestParameters: false
-    RequestBodyValidator:
-      Type: AWS::ApiGateway::RequestValidator
-      Properties:
-        Name: 'request-body-validator'
-        RestApiId:
-          Ref: ApiGatewayRestApi
-        ValidateRequestBody: true
-        ValidateRequestParameters: false
 
     # TODO: Complete the bucket properties below. 
     # Do not forget to add the CorsConfiguration propoerty
